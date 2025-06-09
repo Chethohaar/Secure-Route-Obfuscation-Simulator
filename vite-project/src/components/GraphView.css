@@ -1,0 +1,38 @@
+/* .pulse-traffic and @keyframes pulse are completely removed for debugging */
+
+.real-traffic {
+  line-color: #00ff9d;
+  target-arrow-color: #00ff9d;
+  width: 3px;
+  opacity: 1;
+  transition-property: opacity, line-color, target-arrow-color, width;
+  transition-duration: 0.3s;
+}
+
+.dummy-traffic {
+  line-color: #ff0066;
+  target-arrow-color: #ff0066;
+  width: 3px;
+  opacity: 1;
+  transition-property: opacity, line-color, target-arrow-color, width;
+  transition-duration: 0.3s;
+}
+
+.attacker-visible-traffic {
+  line-color: #00bfff !important; /* A shade of blue */
+  target-arrow-color: #00bfff !important;
+  width: 3px;
+  opacity: 1;
+  transition-property: opacity, line-color, target-arrow-color, width;
+  transition-duration: 0s; /* Ensure immediate application */
+}
+
+/* Packet Moving Animation */
+@keyframes move-packet {
+  from { line-dash-offset: 0; }
+  to { line-dash-offset: -30; } /* Negative offset to make it appear to move along the line */
+}
+
+.packet-moving-animation {
+  animation: move-packet 1s linear infinite;
+} 

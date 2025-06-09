@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-cyber-black text-white;
+  }
+}
+
+@layer components {
+  .cyber-button {
+    @apply px-4 py-2 bg-cyber-black border-2 border-cyber-blue text-cyber-blue 
+           hover:bg-cyber-blue hover:text-cyber-black transition-all duration-300
+           focus:outline-none focus:ring-2 focus:ring-cyber-blue focus:ring-opacity-50;
+  }
+  
+  .cyber-card {
+    @apply bg-cyber-black border-2 border-cyber-blue p-4 rounded-lg
+           shadow-neon-blue hover:shadow-neon-pink transition-all duration-300;
+  }
+  
+  .cyber-input {
+    @apply bg-cyber-black border-2 border-cyber-blue text-cyber-blue px-3 py-2
+           focus:outline-none focus:ring-2 focus:ring-cyber-blue focus:ring-opacity-50;
+  }
+}
