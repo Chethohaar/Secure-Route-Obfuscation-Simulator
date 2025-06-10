@@ -212,37 +212,36 @@ const GraphView = ({
       // USER VIEW: Handle animation and static display based on simulation state.
       if (isSimulating) {
         // User View during simulation: Main path animates, dummies are static.
-        // Apply static styles for ALL dummy paths
-        for (const edgeId in animatedEdgeStates) {
-          const edgeState = animatedEdgeStates[edgeId];
-          const edgeElement = cyRef.current.getElementById(edgeId);
-
-          if (edgeElement.length > 0 && edgeState.dummy.length > 0) {
-            edgeState.dummy.forEach(dummyIdx => {
+        // Apply static styles for ALL dummy paths, independently of animatedEdgeStates
+        dummyPaths.forEach((path, pathIdx) => {
+          path.forEach(edge => {
+            const edgeElement = cyRef.current.getElementById(edge.data.id);
+            if (edgeElement.length > 0) {
               edgeElement.style({
-                ...styles.dummyColors[dummyIdx % styles.dummyColors.length],
+                ...styles.dummyColors[pathIdx % styles.dummyColors.length],
                 'transition-duration': '0s',
                 'transition-property': 'none',
                 'transition-timing-function': 'linear'
               });
-            });
-          }
-        }
+            }
+          });
+        });
 
-        // Then handle main path animation
+        // Then handle main path animation based on animatedEdgeStates
         for (const edgeId in animatedEdgeStates) {
           const edgeState = animatedEdgeStates[edgeId];
           const edgeElement = cyRef.current.getElementById(edgeId);
 
           if (edgeElement.length > 0 && edgeState.main) {
-            if (edgeState.dummy.length > 0) { // Overlap
+            // In user view, main path is green or purple if overlapping
+            if (dummyPaths.some(path => path.some(e => e.data.id === edgeId))) { // Check if main path edge overlaps with any dummy path
               edgeElement.style({
                 ...styles.overlap,
                 'transition-duration': '0.3s',
                 'transition-property': 'line-color, target-arrow-color, width, opacity',
                 'transition-timing-function': 'ease-in-out'
               });
-            } else { // Only main
+            } else {
               edgeElement.style({
                 ...styles.main,
                 'transition-duration': '0.3s',

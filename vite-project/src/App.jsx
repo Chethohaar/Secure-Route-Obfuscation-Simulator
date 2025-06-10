@@ -88,20 +88,16 @@ function App() {
     }
     window.trafficIntervals = [];
 
-    // BEFORE animation starts: log the actual paths being passed
-    console.log('DEBUG: Final selectedPath for animation:', selectedPath.map(e => e.data.id));
-    console.log('DEBUG: Final selectedDummyPaths for animation:', selectedDummyPaths.map(p => p.map(e => e.data.id)));
+    // DEBUG: Final selectedPath for animation:', selectedPath.map(e => e.data.id));
+    // DEBUG: Final selectedDummyPaths for animation:', selectedDummyPaths.map(p => p.map(e => e.data.id)));
 
-    // Animate all paths (main + dummies) in both views
-    const allAnimatedPaths = [selectedPath, ...selectedDummyPaths];
-    allAnimatedPaths.forEach((path, idx) => {
-      const isMain = idx === 0;
-      // Pass setAnimatedEdgeStates to the animation function
-      const interval = animatePath(path, isMain, setAnimatedEdgeStates, idx);
-      if (interval) window.trafficIntervals.push(interval);
-    });
+    // Animate ONLY the main path in user view. Dummy paths are static.
+    const interval = animatePath(selectedPath, true, setAnimatedEdgeStates, 0); // dummyIdx is not used for main path
+    if (interval) window.trafficIntervals.push(interval);
+
   };
 
+  // Refactored animatePath to update state, not direct classes
   const animatePath = (path, isMain, setAnimatedEdgeStates, dummyIdx) => {
     if (!path || path.length === 0) return;
 
@@ -109,43 +105,27 @@ function App() {
     let currentIndex = 0;
 
     const interval = setInterval(() => {
-      // Clear previous edge's animation state for this path
-      const prevIdx = (currentIndex - 1 + path.length) % path.length;
-      const prevEdge = path[prevIdx];
-
       setAnimatedEdgeStates(prevStates => {
         const newStates = { ...prevStates };
-        if (prevEdge) {
-          if (newStates[prevEdge.data.id]) {
-            if (isMain) {
-              newStates[prevEdge.data.id].main = false;
-            } else {
-              newStates[prevEdge.data.id].dummy = newStates[prevEdge.data.id].dummy.filter(id => id !== dummyIdx);
-            }
-          }
+
+        // Clear previous main edge's animation state
+        const prevIdx = (currentIndex - 1 + path.length) % path.length;
+        const prevEdge = path[prevIdx];
+        if (prevEdge && newStates[prevEdge.data.id]) {
+          newStates[prevEdge.data.id].main = false;
         }
 
-        // Set current edge's animation state for this path
+        // Set current main edge's animation state
         const currentEdge = path[currentIndex];
         if (currentEdge) {
           if (!newStates[currentEdge.data.id]) {
-            newStates[currentEdge.data.id] = { main: false, dummy: [] };
+            newStates[currentEdge.data.id] = { main: false, dummy: [] }; // dummy array will not be used for animation
           }
-          if (isMain) {
-            newStates[currentEdge.data.id].main = true;
-          } else {
-            if (!newStates[currentEdge.data.id].dummy.includes(dummyIdx)) {
-              newStates[currentEdge.data.id].dummy.push(dummyIdx);
-            }
-          }
-
-          // DEBUG: Log the individual edge state and the full animatedEdgeStates object at each step
-          console.log(
-            `DEBUG: ${isMain ? 'Main' : `Dummy ${dummyIdx}`} animating edge ${currentEdge.data.id}`,
-            `State: ${JSON.stringify(newStates[currentEdge.data.id])}`,
-            `Full animatedEdgeStates: ${JSON.stringify(newStates)}`
-          );
+          newStates[currentEdge.data.id].main = true;
         }
+
+        // DEBUG: Log the entire animatedEdgeStates object at each step
+        // console.log('DEBUG: animatedEdgeStates at step', JSON.stringify(newStates));
         return newStates;
       });
 
@@ -160,16 +140,10 @@ function App() {
         if (!newStates[initialEdge.data.id]) {
           newStates[initialEdge.data.id] = { main: false, dummy: [] };
         }
-        if (isMain) {
-          newStates[initialEdge.data.id].main = true;
-        } else {
-          if (!newStates[initialEdge.data.id].dummy.includes(dummyIdx)) {
-            newStates[initialEdge.data.id].dummy.push(dummyIdx);
-          }
-        }
+        newStates[initialEdge.data.id].main = true;
       }
       // DEBUG: Log the initial animatedEdgeStates object with full content
-      console.log('DEBUG: Initial animatedEdgeStates', JSON.stringify(newStates));
+      // console.log('DEBUG: Initial animatedEdgeStates', JSON.stringify(newStates));
       return newStates;
     });
 
