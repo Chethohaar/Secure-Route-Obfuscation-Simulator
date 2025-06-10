@@ -135,17 +135,18 @@ const ControlPanel = ({
 
   if (isAttackerView) {
     return (
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="cyber-card space-y-4"
-      >
-        <h2 className="text-xl font-bold text-cyber-blue">Network Analysis</h2>
-        <div className="text-cyber-pink text-sm">
-          <p>As an attacker, you can observe the network traffic but cannot control the routing.</p>
-          <p className="mt-2">Try to identify patterns in the traffic to determine the real path!</p>
-        </div>
-      </motion.div>
+      <></>
+      // <motion.div
+      //   initial={{ opacity: 0, x: 20 }}
+      //   animate={{ opacity: 1, x: 0 }}
+      //   className="cyber-card space-y-4"
+      // >
+      //   <h2 className="text-xl font-bold text-cyber-blue">Network Analysis</h2>
+      //   <div className="text-cyber-pink text-sm">
+      //     <p>As an attacker, you can observe the network traffic but cannot control the routing.</p>
+      //     <p className="mt-2">Try to identify patterns in the traffic to determine the real path!</p>
+      //   </div>
+      // </motion.div>
     );
   }
 

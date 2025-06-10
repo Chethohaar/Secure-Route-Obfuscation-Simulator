@@ -176,7 +176,10 @@ const runDijkstraWithSteps = (graph, start, end) => {
   steps.push({
     currentNode: start,
     distance: 0,
-    distances: { ...distances }
+    distances: Object.entries(distances).reduce((acc, [nodeId, nodeData]) => {
+      acc[nodeId] = { ...nodeData }; // Deep copy each node's distance/previous/visited data
+      return acc;
+    }, {})
   });
 
   while (unvisited.size > 0) {
@@ -190,7 +193,7 @@ const runDijkstraWithSteps = (graph, start, end) => {
       }
     });
 
-    if (current === null || current === end) break;
+    if (current === null) break;
 
     unvisited.delete(current);
     distances[current].visited = true;
@@ -212,7 +215,10 @@ const runDijkstraWithSteps = (graph, start, end) => {
     steps.push({
       currentNode: current,
       distance: distances[current].distance,
-      distances: { ...distances }
+      distances: Object.entries(distances).reduce((acc, [nodeId, nodeData]) => {
+        acc[nodeId] = { ...nodeData }; // Deep copy each node's distance/previous/visited data
+        return acc;
+      }, {})
     });
   }
 
