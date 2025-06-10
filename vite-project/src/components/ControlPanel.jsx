@@ -84,7 +84,7 @@ const ControlPanel = ({
       // Only update graphData once after all edges are processed
       setGraphData(prev => ({
         ...prev,
-        edges: [...prev.edges, ...newEdges]
+        edges: newEdges
       }));
 
       setCostMatrix('');

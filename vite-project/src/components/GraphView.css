@@ -9,7 +9,19 @@
   transition-duration: 0.3s;
 }
 
+/* The generic .dummy-traffic class is removed as it conflicts with specific dummy-traffic-X classes */
+/*
 .dummy-traffic {
+  line-color: #ff0066;
+  target-arrow-color: #ff0066;
+  width: 3px;
+  opacity: 1;
+  transition-property: opacity, line-color, target-arrow-color, width;
+  transition-duration: 0.3s;
+}
+*/
+
+.dummy-traffic-0 {
   line-color: #ff0066;
   target-arrow-color: #ff0066;
   width: 3px;
@@ -33,6 +45,16 @@
   to { line-dash-offset: -30; } /* Negative offset to make it appear to move along the line */
 }
 
-.packet-moving-animation {
+.real-traffic.packet-moving-animation,
+.dummy-traffic.packet-moving-animation,
+.dummy-traffic-0.packet-moving-animation,
+.dummy-traffic-1.packet-moving-animation,
+.dummy-traffic-2.packet-moving-animation,
+.dummy-traffic-3.packet-moving-animation {
+  line-dash-pattern: 15 15;
   animation: move-packet 1s linear infinite;
+}
+
+.packet-moving-animation {
+  /* animation removed, handled in JS */
 } 

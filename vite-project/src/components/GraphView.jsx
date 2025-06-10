@@ -11,10 +11,26 @@ const GraphView = ({
   isSimulating,
   onCytoscapeInit,
   selectedSource,
-  selectedTarget
+  selectedTarget,
+  animatedEdgeStates
 }) => {
   const containerRef = useRef(null);
   const cyRef = useRef(null);
+
+  // Define colors and styles as constants
+  const styles = {
+    default: { 'line-color': '#ccc', 'target-arrow-color': '#ccc', 'width': '2px', 'opacity': 1 },
+    main: { 'line-color': '#00ff9d', 'target-arrow-color': '#00ff9d', 'width': '3px', 'opacity': 1 },
+    dummyColors: [
+      { 'line-color': '#ff0066', 'target-arrow-color': '#ff0066', 'width': '3px', 'opacity': 1 }, // dummy-traffic-0
+      { 'line-color': '#ffae00', 'target-arrow-color': '#ffae00', 'width': '3px', 'opacity': 1 }, // dummy-traffic-1
+      { 'line-color': '#00bfff', 'target-arrow-color': '#00bfff', 'width': '3px', 'opacity': 1 }, // dummy-traffic-2
+      { 'line-color': '#a259ff', 'target-arrow-color': '#a259ff', 'width': '3px', 'opacity': 1 }, // dummy-traffic-3
+    ],
+    overlap: { 'line-color': '#ff00ff', 'target-arrow-color': '#ff00ff', 'width': '8px', 'opacity': 1 },
+    attacker: { 'line-color': '#00bfff', 'target-arrow-color': '#00bfff', 'width': '3px', 'opacity': 1 },
+    selected: { 'line-color': '#00ff9d', 'target-arrow-color': '#00ff9d', 'width': '3px', 'opacity': 1 },
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -69,42 +85,6 @@ const GraphView = ({
           }
         },
         {
-          selector: '.selected',
-          style: {
-            'line-color': '#00ff9d',
-            'target-arrow-color': '#00ff9d',
-            'width': '3px'
-          }
-        },
-        {
-          selector: '.real-traffic',
-          style: {
-            'line-color': '#00ff9d',
-            'target-arrow-color': '#00ff9d',
-            'width': '3px',
-            'opacity': 1
-          }
-        },
-        {
-          selector: '.dummy-traffic',
-          style: {
-            'line-color': '#ff0066',
-            'target-arrow-color': '#ff0066',
-            'width': '3px',
-            'opacity': 1
-          }
-        },
-        {
-          selector: '.attacker-visible-traffic',
-          style: {
-            'line-color': '#00bfff',
-            'target-arrow-color': '#00bfff',
-            'width': '3px',
-            'opacity': 1,
-            'transition-duration': '0s'
-          }
-        },
-        {
           selector: '.source-node',
           style: {
             'background-color': '#007bff',
@@ -122,15 +102,6 @@ const GraphView = ({
           selector: '.hide-label',
           style: {
             'label': ''
-          }
-        },
-        {
-          selector: '.packet-moving-animation',
-          style: {
-            'line-dash-pattern': [15, 15],
-            'line-dash-offset': '0',
-            'transition-property': 'line-dash-offset',
-            'transition-duration': '1s',
           }
         }
       ],
@@ -201,75 +172,49 @@ const GraphView = ({
     }
   }, [selectedSource, selectedTarget]);
 
-  // Handle path highlighting and traffic simulation
+  // NEW: Centralized Effect to apply animation styles based on animatedEdgeStates
   useEffect(() => {
     if (!cyRef.current) return;
 
-    console.log('GraphView useEffect triggered:', { selectedPath, dummyPaths, isSimulating, isAttackerView });
+    // Reset all edges to default style first
+    cyRef.current.edges().style(styles.default);
 
-    // Clear all traffic-related classes and reset direct styles to default
-    cyRef.current.elements().removeClass('selected real-traffic dummy-traffic packet-moving-animation');
-    cyRef.current.edges().style({
-      'line-color': '#ccc',
-      'target-arrow-color': '#ccc',
-      'width': '2px',
-      'opacity': 1
-    });
+    if (isSimulating) {
+      // During simulation, apply styles based on animatedEdgeStates
+      for (const edgeId in animatedEdgeStates) {
+        const edgeState = animatedEdgeStates[edgeId];
+        const edgeElement = cyRef.current.getElementById(edgeId);
 
-    if (isAttackerView) {
-      if (isSimulating) {
-        // In Attacker View during simulation, override colors to blue directly
-        const pathsToHighlight = [];
-        if (selectedPath) {
-          pathsToHighlight.push(...selectedPath);
-        }
-        dummyPaths.forEach(path => pathsToHighlight.push(...path));
-
-        pathsToHighlight.forEach(edge => {
-          const edgeElement = cyRef.current.getElementById(edge.data.id);
-          if (edgeElement.length > 0) {
-            edgeElement.style({
-              'line-color': '#00bfff',
-              'target-arrow-color': '#00bfff'
-            });
-            console.log(`Attacker View: Applied blue style to edge ${edge.data.id}. Computed style:`, edgeElement.style());
-          }
-        });
-      }
-      // If not simulating in attacker view, paths remain default (grey)
-    } else {
-      // In User View, apply real/dummy traffic or selected path styles via classes
-      if (isSimulating) {
-        // Apply real traffic highlight
-        if (selectedPath) {
-          selectedPath.forEach(edge => {
-            const edgeElement = cyRef.current.getElementById(edge.data.id);
-            if (edgeElement.length > 0) {
-              edgeElement.addClass('real-traffic');
+        if (edgeElement.length > 0) {
+          if (isAttackerView) {
+            // In Attacker View, all active edges are blue
+            if (edgeState.main || edgeState.dummy.length > 0) {
+              edgeElement.style(styles.attacker);
             }
-          });
-        }
-
-        // Apply dummy traffic highlights
-        dummyPaths.forEach(path => {
-          path.forEach(edge => {
-            const edgeElement = cyRef.current.getElementById(edge.data.id);
-            if (edgeElement.length > 0) {
-              edgeElement.addClass('dummy-traffic');
+          } else {
+            // In User View, apply specific colors and handle overlaps
+            if (edgeState.main && edgeState.dummy.length > 0) {
+              edgeElement.style(styles.overlap);
+            } else if (edgeState.main) {
+              edgeElement.style(styles.main);
+            } else if (edgeState.dummy.length > 0) {
+              // Apply the color based on the first dummy index animating this edge
+              const dummyIdx = edgeState.dummy[0];
+              edgeElement.style(styles.dummyColors[dummyIdx % styles.dummyColors.length]);
             }
-          });
-        });
-      } else if (selectedPath) {
-        // If not simulating, only show the selected path
-        selectedPath.forEach(edge => {
-          const edgeElement = cyRef.current.getElementById(edge.data.id);
-          if (edgeElement.length > 0) {
-            edgeElement.addClass('selected');
           }
-        });
+        }
       }
+    } else if (selectedPath) {
+      // If not simulating, but a path is selected, show it as 'selected'
+      selectedPath.forEach(edge => {
+        const edgeElement = cyRef.current.getElementById(edge.data.id);
+        if (edgeElement.length > 0) {
+          edgeElement.style(styles.selected);
+        }
+      });
     }
-  }, [selectedPath, dummyPaths, isSimulating, isAttackerView]);
+  }, [animatedEdgeStates, isAttackerView, isSimulating, selectedPath]);
 
   // Effect to toggle edge label visibility based on isAttackerView
   useEffect(() => {
@@ -281,13 +226,12 @@ const GraphView = ({
     }
   }, [isAttackerView]);
 
-  // Cleanup: Remove any lingering traffic styles when the component unmounts or when animation stops from App.jsx
+  // Cleanup: Reset styles on unmount or when animation stops from App.jsx
   useEffect(() => {
     return () => {
       if (cyRef.current) {
-        // Reset all styles on unmount
-        cyRef.current.elements().removeClass('selected real-traffic dummy-traffic hide-label source-node target-node packet-moving-animation');
-        cyRef.current.edges().style({
+        cyRef.current.elements().removeClass('hide-label source-node target-node'); // Only remove node-related classes here
+        cyRef.current.edges().style({ // Reset all edge styles to default
           'line-color': '#ccc',
           'target-arrow-color': '#ccc',
           'width': '2px',

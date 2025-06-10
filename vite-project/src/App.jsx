@@ -20,6 +20,7 @@ function App() {
     totalCost: 0,
     obfuscationLevel: 'low',
   })
+  const [animatedEdgeStates, setAnimatedEdgeStates] = useState({});
   const [selectedSource, setSelectedSource] = useState(null)
   const [selectedTarget, setSelectedTarget] = useState(null)
   const [isSimulating, setIsSimulating] = useState(false)
@@ -47,20 +48,8 @@ function App() {
       }
       window.trafficIntervals = [];
       setIsSimulating(false);
+      setAnimatedEdgeStates({});
       
-      // Clear traffic-related classes
-      if (cyRef.current) {
-        cyRef.current.elements().removeClass('real-traffic dummy-traffic pulse-traffic selected');
-        // Re-highlight selected path
-        if (selectedPath) {
-          selectedPath.forEach(edge => {
-            const edgeElement = cyRef.current.getElementById(edge.data.id);
-            if (edgeElement.length > 0) {
-              edgeElement.addClass('selected');
-            }
-          });
-        }
-      }
       return;
     }
 
@@ -72,6 +61,7 @@ function App() {
 
     setIsSimulating(true);
     setDummyPaths([]); // Clear previous dummy paths
+    setAnimatedEdgeStates({});
 
     // Generate dummy paths based on obfuscation level
     const allPaths = findAllPaths(graphData, selectedSource, selectedTarget);
@@ -98,45 +88,90 @@ function App() {
     }
     window.trafficIntervals = [];
 
-    if (isAttackerView) {
-      // In Attacker View, animate all paths (real + dummy)
-      const allAnimatedPaths = [selectedPath, ...selectedDummyPaths];
-      allAnimatedPaths.forEach(path => {
-        const interval = animatePath(path);
-        if (interval) window.trafficIntervals.push(interval);
-      });
-    } else {
-      // In User View, only animate the real path
-      const realInterval = animatePath(selectedPath);
-      if (realInterval) window.trafficIntervals.push(realInterval);
-    }
+    // BEFORE animation starts: log the actual paths being passed
+    console.log('DEBUG: Final selectedPath for animation:', selectedPath.map(e => e.data.id));
+    console.log('DEBUG: Final selectedDummyPaths for animation:', selectedDummyPaths.map(p => p.map(e => e.data.id)));
+
+    // Animate all paths (main + dummies) in both views
+    const allAnimatedPaths = [selectedPath, ...selectedDummyPaths];
+    allAnimatedPaths.forEach((path, idx) => {
+      const isMain = idx === 0;
+      // Pass setAnimatedEdgeStates to the animation function
+      const interval = animatePath(path, isMain, setAnimatedEdgeStates, idx);
+      if (interval) window.trafficIntervals.push(interval);
+    });
   };
 
-  const animatePath = (path) => {
+  const animatePath = (path, isMain, setAnimatedEdgeStates, dummyIdx) => {
     if (!path || path.length === 0) return;
 
-    const speed = 500; // Constant speed for packet animation
+    const speed = 700; // ms per edge (adjust as needed)
     let currentIndex = 0;
 
-    const animate = () => {
-      if (!cyRef.current) return;
+    const interval = setInterval(() => {
+      // Clear previous edge's animation state for this path
+      const prevIdx = (currentIndex - 1 + path.length) % path.length;
+      const prevEdge = path[prevIdx];
 
-      // Remove previous packet animation
-      cyRef.current.elements().removeClass('packet-moving-animation');
+      setAnimatedEdgeStates(prevStates => {
+        const newStates = { ...prevStates };
+        if (prevEdge) {
+          if (newStates[prevEdge.data.id]) {
+            if (isMain) {
+              newStates[prevEdge.data.id].main = false;
+            } else {
+              newStates[prevEdge.data.id].dummy = newStates[prevEdge.data.id].dummy.filter(id => id !== dummyIdx);
+            }
+          }
+        }
 
-      // Set the ID of the edge that should have the packet animation
-      const edge = path[currentIndex];
-      const edgeElement = cyRef.current.getElementById(edge.data.id);
-      if (edgeElement.length > 0) {
-        edgeElement.addClass('packet-moving-animation');
-      }
+        // Set current edge's animation state for this path
+        const currentEdge = path[currentIndex];
+        if (currentEdge) {
+          if (!newStates[currentEdge.data.id]) {
+            newStates[currentEdge.data.id] = { main: false, dummy: [] };
+          }
+          if (isMain) {
+            newStates[currentEdge.data.id].main = true;
+          } else {
+            if (!newStates[currentEdge.data.id].dummy.includes(dummyIdx)) {
+              newStates[currentEdge.data.id].dummy.push(dummyIdx);
+            }
+          }
+
+          // DEBUG: Log the individual edge state and the full animatedEdgeStates object at each step
+          console.log(
+            `DEBUG: ${isMain ? 'Main' : `Dummy ${dummyIdx}`} animating edge ${currentEdge.data.id}`,
+            `State: ${JSON.stringify(newStates[currentEdge.data.id])}`,
+            `Full animatedEdgeStates: ${JSON.stringify(newStates)}`
+          );
+        }
+        return newStates;
+      });
 
       currentIndex = (currentIndex + 1) % path.length;
-    };
+    }, speed);
 
-    // Start animation
-    const interval = setInterval(animate, speed);
-    animate(); // Initial animation
+    // Initial state update
+    setAnimatedEdgeStates(prevStates => {
+      const newStates = { ...prevStates };
+      const initialEdge = path[currentIndex];
+      if (initialEdge) {
+        if (!newStates[initialEdge.data.id]) {
+          newStates[initialEdge.data.id] = { main: false, dummy: [] };
+        }
+        if (isMain) {
+          newStates[initialEdge.data.id].main = true;
+        } else {
+          if (!newStates[initialEdge.data.id].dummy.includes(dummyIdx)) {
+            newStates[initialEdge.data.id].dummy.push(dummyIdx);
+          }
+        }
+      }
+      // DEBUG: Log the initial animatedEdgeStates object with full content
+      console.log('DEBUG: Initial animatedEdgeStates', JSON.stringify(newStates));
+      return newStates;
+    });
 
     return interval;
   };
@@ -216,6 +251,7 @@ function App() {
   onCytoscapeInit={handleCytoscapeInit}
   selectedSource={selectedSource}
   selectedTarget={selectedTarget}
+  animatedEdgeStates={animatedEdgeStates}
 />
             </div>
           </div>
