@@ -176,45 +176,108 @@ const GraphView = ({
   useEffect(() => {
     if (!cyRef.current) return;
 
-    // Reset all edges to default style first
+    // Always reset all edges to default style first for a clean slate
     cyRef.current.edges().style(styles.default);
 
-    if (isSimulating) {
-      // During simulation, apply styles based on animatedEdgeStates
-      for (const edgeId in animatedEdgeStates) {
-        const edgeState = animatedEdgeStates[edgeId];
-        const edgeElement = cyRef.current.getElementById(edgeId);
+    if (isAttackerView) {
+      // ATTACKER VIEW: All relevant paths (selectedPath + dummyPaths) must be blue and static.
 
-        if (edgeElement.length > 0) {
-          if (isAttackerView) {
-            // In Attacker View, all active edges are blue
-            if (edgeState.main || edgeState.dummy.length > 0) {
-              edgeElement.style(styles.attacker);
-            }
-          } else {
-            // In User View, apply specific colors and handle overlaps
-            if (edgeState.main && edgeState.dummy.length > 0) {
-              edgeElement.style(styles.overlap);
-            } else if (edgeState.main) {
-              edgeElement.style(styles.main);
-            } else if (edgeState.dummy.length > 0) {
-              // Apply the color based on the first dummy index animating this edge
-              const dummyIdx = edgeState.dummy[0];
-              edgeElement.style(styles.dummyColors[dummyIdx % styles.dummyColors.length]);
+      // Identify all edges that *should* be visible in the attacker view
+      const edgesVisibleToAttacker = new Set();
+
+      // Always include selectedPath and dummyPaths
+      if (selectedPath) {
+        selectedPath.forEach(edge => edgesVisibleToAttacker.add(edge.data.id));
+      }
+      dummyPaths.forEach(path => {
+        path.forEach(edge => edgesVisibleToAttacker.add(edge.data.id));
+      });
+
+      // Apply styles to all edges based on whether they are in the set of edges to highlight
+      cyRef.current.edges().forEach(edge => {
+        if (edgesVisibleToAttacker.has(edge.id())) {
+          edge.style({
+            ...styles.attacker,
+            'transition-duration': '0s', // No animation
+            'transition-property': 'none',
+            'transition-timing-function': 'linear'
+          });
+        } else {
+          // Reset inactive edges to default
+          edge.style(styles.default);
+        }
+      });
+
+    } else {
+      // USER VIEW: Handle animation and static display based on simulation state.
+      if (isSimulating) {
+        // User View during simulation: Main path animates, dummies are static.
+        // Apply static styles for ALL dummy paths
+        for (const edgeId in animatedEdgeStates) {
+          const edgeState = animatedEdgeStates[edgeId];
+          const edgeElement = cyRef.current.getElementById(edgeId);
+
+          if (edgeElement.length > 0 && edgeState.dummy.length > 0) {
+            edgeState.dummy.forEach(dummyIdx => {
+              edgeElement.style({
+                ...styles.dummyColors[dummyIdx % styles.dummyColors.length],
+                'transition-duration': '0s',
+                'transition-property': 'none',
+                'transition-timing-function': 'linear'
+              });
+            });
+          }
+        }
+
+        // Then handle main path animation
+        for (const edgeId in animatedEdgeStates) {
+          const edgeState = animatedEdgeStates[edgeId];
+          const edgeElement = cyRef.current.getElementById(edgeId);
+
+          if (edgeElement.length > 0 && edgeState.main) {
+            if (edgeState.dummy.length > 0) { // Overlap
+              edgeElement.style({
+                ...styles.overlap,
+                'transition-duration': '0.3s',
+                'transition-property': 'line-color, target-arrow-color, width, opacity',
+                'transition-timing-function': 'ease-in-out'
+              });
+            } else { // Only main
+              edgeElement.style({
+                ...styles.main,
+                'transition-duration': '0.3s',
+                'transition-property': 'line-color, target-arrow-color, width, opacity',
+                'transition-timing-function': 'ease-in-out'
+              });
             }
           }
         }
+      } else if (selectedPath) {
+        // User View, NOT simulating, but a path is selected (static display after calculation)
+        // Main path is selected and green
+        selectedPath.forEach(edge => {
+          const edgeElement = cyRef.current.getElementById(edge.data.id);
+          if (edgeElement.length > 0) {
+            edgeElement.style(styles.selected);
+          }
+        });
+
+        // Dummy paths are displayed in their distinct static colors
+        dummyPaths.forEach((path, pathIdx) => {
+          path.forEach(edge => {
+            const edgeElement = cyRef.current.getElementById(edge.data.id);
+            if (edgeElement.length > 0) {
+              edgeElement.style({
+                  ...styles.dummyColors[pathIdx % styles.dummyColors.length],
+                  'transition-duration': '0s',
+                  'transition-property': 'none'
+              });
+            }
+          });
+        });
       }
-    } else if (selectedPath) {
-      // If not simulating, but a path is selected, show it as 'selected'
-      selectedPath.forEach(edge => {
-        const edgeElement = cyRef.current.getElementById(edge.data.id);
-        if (edgeElement.length > 0) {
-          edgeElement.style(styles.selected);
-        }
-      });
     }
-  }, [animatedEdgeStates, isAttackerView, isSimulating, selectedPath]);
+  }, [animatedEdgeStates, isAttackerView, isSimulating, selectedPath, dummyPaths]);
 
   // Effect to toggle edge label visibility based on isAttackerView
   useEffect(() => {
