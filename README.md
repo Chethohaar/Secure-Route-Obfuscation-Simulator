@@ -1,6 +1,33 @@
-# Secure DAA CLI Tool
+# SECURE ROUTE OBFUSCATION SIMULATOR
 
-This is a command-line interface (CLI) version of the Secure DAA (Design and Analysis of Algorithms) project. It implements Dijkstra's algorithm with secure routing features, allowing users to find shortest paths in graphs while also generating dummy paths for security purposes.
+![User View](/secureDAA/Userview.png)
+![Algo Visualisation](/secureDAA/Algovisual.png)
+![Attacker View](/secureDAA/Attackerview.png)
+
+## Features Explained
+
+1. **Dijkstra's Algorithm**: Finds the shortest path between two nodes in a weighted graph.
+
+2. **Step-by-Step Visualization**: Shows how the algorithm works:
+
+   - Current node being processed
+   - Updated distances to all nodes
+   - Previous nodes in the shortest paths
+
+3. **Secure Routing**:
+
+   - Generates dummy paths to obscure the actual path
+   - Helps prevent traffic analysis attacks
+   - Creates multiple believable alternative paths
+
+4. **Distance Table**: Shows for each node:
+   - Current known distance from start
+   - Previous node in the shortest path
+   - Whether the node has been visited
+
+# CLI TOOL
+
+This is a command-line interface (CLI) version of the Secure Route Obfuscation Simulator (Design and Analysis of Algorithms) project. It implements Dijkstra's algorithm with secure routing features, allowing users to find shortest paths in graphs while also generating dummy paths for security purposes.
 
 ## Features
 
@@ -86,24 +113,3 @@ This is a command-line interface (CLI) version of the Secure DAA (Design and Ana
    - Total distance
    - Optional step-by-step process
    - Optional dummy paths for secure routing
-
-## Features Explained
-
-1. **Dijkstra's Algorithm**: Finds the shortest path between two nodes in a weighted graph.
-
-2. **Step-by-Step Visualization**: Shows how the algorithm works:
-
-   - Current node being processed
-   - Updated distances to all nodes
-   - Previous nodes in the shortest paths
-
-3. **Secure Routing**:
-
-   - Generates dummy paths to obscure the actual path
-   - Helps prevent traffic analysis attacks
-   - Creates multiple believable alternative paths
-
-4. **Distance Table**: Shows for each node:
-   - Current known distance from start
-   - Previous node in the shortest path
-   - Whether the node has been visited
