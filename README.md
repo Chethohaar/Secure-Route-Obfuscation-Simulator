@@ -1,8 +1,8 @@
 # SECURE ROUTE OBFUSCATION SIMULATOR
 
-![User View](/secureDAA/Userview.png)
-![Algo Visualisation](/secureDAA/Algovisual.png)
-![Attacker View](/secureDAA/Attackerview.png)
+![User View](Userview.png)
+![Algo Visualisation](Algovisual.png)
+![Attacker View](Attackerview.png)
 
 ## Features Explained
 
