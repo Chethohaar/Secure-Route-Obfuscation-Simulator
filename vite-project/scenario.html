@@ -1,0 +1,49 @@
+<body style="margin: 0; padding: 0; background-color: black; cursor: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 16 16%22><circle cx=%228%22 cy=%228%22 r=%224%22 fill=%22red%22 stroke=%22red%22 stroke-width=%221%22/></svg>') 8 8, crosshair;">
+    <img src="/scenario.png" style="width: 100vw; height: 100vh; object-fit: contain;" alt="Scenario not loaded">
+    <div><a href="/" style="font-size: 20px;">Back</a></div>
+    
+    <script>
+        const trail = [];
+        const maxTrailLength = 15;
+        
+        document.addEventListener('mousemove', (e) => {
+            // Add current position to trail
+            trail.push({
+                x: e.clientX,
+                y: e.clientY,
+                time: Date.now()
+            });
+            
+            // Remove old trail points
+            const now = Date.now();
+            while (trail.length > 0 && (now - trail[0].time > 300 || trail.length > maxTrailLength)) {
+                trail.shift();
+            }
+            
+            // Clear existing trail dots
+            document.querySelectorAll('.laser-trail').forEach(dot => dot.remove());
+            
+            // Create trail dots
+            trail.forEach((point, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'laser-trail';
+                dot.style.position = 'fixed';
+                dot.style.left = (point.x - 2) + 'px';
+                dot.style.top = (point.y - 2) + 'px';
+                dot.style.width = '4px';
+                dot.style.height = '4px';
+                dot.style.backgroundColor = 'red';
+                dot.style.borderRadius = '50%';
+                dot.style.pointerEvents = 'none';
+                dot.style.zIndex = '9999';
+                
+                // Fade effect based on age
+                const age = now - point.time;
+                const opacity = Math.max(0, 1 - (age / 300));
+                dot.style.opacity = opacity;
+                
+                document.body.appendChild(dot);
+            });
+        });
+    </script>
+</body>
